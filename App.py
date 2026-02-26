@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 st.set_page_config(
     page_title="DataPilot - Scaling Clarity Engine",
@@ -6,45 +7,116 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown("""
-    <style>
-    .big-font {
-        font-size: 24px !important;
-        font-weight: bold !important;
-    }
-    .medium-font {
-        font-size: 18px !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 st.title("📊 DataPilot")
 st.subheader("Scaling Clarity Engine for Indian D2C Brands")
 st.caption("Know exactly when to scale — and when to stop.")
 
 st.markdown("---")
 
-st.header("📥 Enter Your Last 30 Days Data")
+input_method = st.radio(
+    "How would you like to input data?",
+    ["Manual Input", "Upload Shopify CSV"],
+    horizontal=True
+)
 
-col1, col2, col3 = st.columns(3)
+if input_method == "Manual Input":
 
-with col1:
-    st.subheader("💰 Revenue")
-    revenue = st.number_input("Total Revenue (₹)", min_value=0.0, step=10000.0)
-    refunds = st.number_input("Total Refunds (₹)", min_value=0.0, step=1000.0)
-    orders = st.number_input("Total Orders", min_value=1.0, step=10.0)
+    st.header("📥 Enter Your Last 30 Days Data")
 
-with col2:
-    st.subheader("📢 Marketing")
-    ad_spend = st.number_input("Total Ad Spend (₹)", min_value=0.0, step=5000.0)
-    meta_percent = st.number_input("Meta Ads Share (%)", min_value=0.0, max_value=100.0, value=70.0)
-    google_percent = 100 - meta_percent
+    col1, col2, col3 = st.columns(3)
 
-with col3:
-    st.subheader("📦 Costs")
-    cogs_percent = st.number_input("COGS (%)", min_value=0.0, step=1.0)
-    shipping_cost = st.number_input("Avg Shipping per Order (₹)", min_value=0.0, step=10.0)
-    payment_fee_percent = st.number_input("Payment Gateway Fee (%)", min_value=0.0, value=2.0)
+    with col1:
+        st.subheader("💰 Revenue")
+        revenue = st.number_input("Total Revenue (₹)", min_value=0.0, step=10000.0)
+        refunds = st.number_input("Total Refunds (₹)", min_value=0.0, step=1000.0)
+        orders = st.number_input("Total Orders", min_value=1.0, step=10.0)
+
+    with col2:
+        st.subheader("📢 Marketing")
+        ad_spend = st.number_input("Total Ad Spend (₹)", min_value=0.0, step=5000.0)
+        meta_percent = st.number_input("Meta Ads Share (%)", min_value=0.0, max_value=100.0, value=70.0)
+        google_percent = 100 - meta_percent
+
+    with col3:
+        st.subheader("📦 Costs")
+        cogs_percent = st.number_input("COGS (%)", min_value=0.0, step=1.0)
+        shipping_cost = st.number_input("Avg Shipping per Order (₹)", min_value=0.0, step=10.0)
+        payment_fee_percent = st.number_input("Payment Gateway Fee (%)", min_value=0.0, value=2.0)
+
+elif input_method == "Upload Shopify CSV":
+
+    st.header("📤 Upload Your Shopify Orders Export")
+
+    st.markdown("""
+    **How to export from Shopify:**
+    1. Go to Shopify Admin → Orders
+    2. Click Export → Export Orders
+    3. Choose "All Orders" and "CSV for Excel"
+    4. Upload that file below
+    """)
+
+    uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+
+        st.success(f"✅ Uploaded successfully! {len(df)} rows found.")
+
+        st.subheader("Preview of Your Data")
+        st.dataframe(df.head(10))
+
+        possible_revenue_cols = ["Total", "total", "Subtotal", "subtotal", "Total Price", "total_price"]
+        possible_refund_cols = ["Refund", "refund", "Refunded Amount", "refunded_amount"]
+
+        revenue_col = None
+        refund_col = None
+
+        for col in possible_revenue_cols:
+            if col in df.columns:
+                revenue_col = col
+                break
+
+        for col in possible_refund_cols:
+            if col in df.columns:
+                refund_col = col
+                break
+
+        if revenue_col:
+            df[revenue_col] = pd.to_numeric(df[revenue_col], errors="coerce").fillna(0)
+            revenue = df[revenue_col].sum()
+            orders = len(df)
+        else:
+            st.warning("⚠️ Could not find revenue column. Please use Manual Input.")
+            st.stop()
+
+        if refund_col:
+            df[refund_col] = pd.to_numeric(df[refund_col], errors="coerce").fillna(0)
+            refunds = df[refund_col].sum()
+        else:
+            refunds = 0.0
+            st.info("No refund column found. Setting refunds to ₹0.")
+
+        st.write(f"Detected Revenue: **₹{revenue:,.0f}**")
+        st.write(f"Detected Refunds: **₹{refunds:,.0f}**")
+        st.write(f"Detected Orders: **{orders}**")
+
+        st.markdown("---")
+        st.subheader("Enter Remaining Details")
+
+        r1, r2 = st.columns(2)
+
+        with r1:
+            ad_spend = st.number_input("Total Ad Spend (₹)", min_value=0.0, step=5000.0, key="csv_ad")
+            meta_percent = st.number_input("Meta Ads Share (%)", min_value=0.0, max_value=100.0, value=70.0, key="csv_meta")
+            google_percent = 100 - meta_percent
+
+        with r2:
+            cogs_percent = st.number_input("COGS (%)", min_value=0.0, step=1.0, key="csv_cogs")
+            shipping_cost = st.number_input("Avg Shipping per Order (₹)", min_value=0.0, step=10.0, key="csv_ship")
+            payment_fee_percent = st.number_input("Payment Gateway Fee (%)", min_value=0.0, value=2.0, key="csv_pay")
+    else:
+        st.info("Please upload a CSV file to continue.")
+        st.stop()
 
 st.markdown("---")
 
@@ -231,21 +303,18 @@ if st.button("🚀 Run Scaling Diagnosis", type="primary"):
 
     st.header("📅 30-Day Projection")
 
-    projected_revenue = revenue
-    projected_profit = net_profit
-
     if scaling_status == "Safe":
         projected_revenue = revenue * 1.15
         projected_profit = net_profit * 1.15
-        st.write(f"If you scale 15%:")
+        st.write("If you scale 15%:")
     elif scaling_status == "Risk":
         projected_revenue = revenue
         projected_profit = net_profit
-        st.write(f"If you maintain current spend:")
+        st.write("If you maintain current spend:")
     else:
         projected_revenue = revenue * 0.7
         projected_profit = net_profit * 1.3
-        st.write(f"If you reduce spend by 30%:")
+        st.write("If you reduce spend by 30%:")
 
     p1, p2 = st.columns(2)
     p1.metric("Projected Revenue", f"₹{projected_revenue:,.0f}")
@@ -256,22 +325,22 @@ if st.button("🚀 Run Scaling Diagnosis", type="primary"):
     st.header("📋 Executive Summary")
 
     summary = f"""
-    DATAPILOT SCALING REPORT
-    ========================
+DATAPILOT SCALING REPORT
+========================
 
-    Revenue: ₹{revenue:,.0f}
-    Net Revenue: ₹{net_revenue:,.0f}
-    Refund Rate: {refund_rate:.1%}
-    AOV: ₹{aov:,.0f}
+Revenue: Rs.{revenue:,.0f}
+Net Revenue: Rs.{net_revenue:,.0f}
+Refund Rate: {refund_rate:.1%}
+AOV: Rs.{aov:,.0f}
 
-    Total Ad Spend: ₹{ad_spend:,.0f}
-    Current ROAS: {current_roas:.2f}x
-    Break-even ROAS: {break_even_roas:.2f}x
+Total Ad Spend: Rs.{ad_spend:,.0f}
+Current ROAS: {current_roas:.2f}x
+Break-even ROAS: {break_even_roas:.2f}x
 
-    Contribution Margin: {contribution_margin:.1%}
-    Profit per Order: ₹{profit_per_order:,.0f}
+Contribution Margin: {contribution_margin:.1%}
+Profit per Order: Rs.{profit_per_order:,.0f}
 
-    Scaling Status: {scaling_status}
+Scaling Status: {scaling_status}
     """
 
     st.text(summary)
@@ -284,4 +353,4 @@ if st.button("🚀 Run Scaling Diagnosis", type="primary"):
     )
 
     st.markdown("---")
-    st.caption("DataPilot v0.4 — Scaling Clarity Engine for Indian D2C Brands")
+    st.caption("DataPilot v0.5 — Scaling Clarity Engine for Indian D2C Brands")
