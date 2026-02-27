@@ -370,6 +370,15 @@ Status: {scaling_status}
     )
 
     st.markdown("---")
+    
+    if st.button("🔴 Force WhatsApp Test"):
+        from whatsapp_sender import send_whatsapp_message
+        send_whatsapp_message(
+            os.environ.get("MY_PHONE"),
+            "✅ Direct WhatsApp test from Streamlit Cloud"
+    )
+    st.success("Send function triggered")
     st.caption("DataPilot v1.0 — Scaling Clarity Engine for Indian D2C Brands")
+
 
 
