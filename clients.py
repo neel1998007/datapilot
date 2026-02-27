@@ -14,6 +14,7 @@ CLIENTS = {
 
         # ✅ SUBSCRIPTION CONTROL
         "subscription_status": "active",  # active / expired
-        "subscription_end_date": "2024-01-01"
+        "subscription_end_date": "2027-01-01"
     }
+
 }
