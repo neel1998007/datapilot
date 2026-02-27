@@ -2,6 +2,58 @@ import streamlit as st
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
+from clients import CLIENTS
+from datetime import datetime
+
+def check_subscription(store_url):
+    for client in CLIENTS.values():
+        if client["store_url"] == store_url:
+
+            if client.get("subscription_status") != "active":
+                return False
+
+            end_date = datetime.strptime(
+                client["subscription_end_date"],
+                "%Y-%m-%d"
+            )
+
+            return datetime.now() <= end_date
+
+    return False
+
+# Load auth config
+with open("auth_config.yaml") as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+# Create authenticator
+authenticator = stauth.Authenticate(
+    config["credentials"],
+    config["cookie"]["name"],
+    config["cookie"]["key"],
+    config["cookie"]["expiry_days"],
+)
+
+# Login widget
+name, authentication_status, username = authenticator.login(
+    "Login to DataPilot", "main"
+)
+
+# Check authentication
+if authentication_status == False:
+    st.error("❌ Wrong username or password")
+    st.stop()
+
+if authentication_status == None:
+    st.warning("Please enter your username and password")
+    st.stop()
+
+# If we reach here → user is logged in
+# Show logout button in sidebar
+authenticator.logout("Logout", "sidebar")
+st.sidebar.write(f"Welcome, *{name}*")
 
 load_dotenv()
 
@@ -132,6 +184,12 @@ elif input_method == "Connect Shopify Store":
 
     store_url = st.text_input("Store URL (e.g., yourstore.myshopify.com)")
     access_token = st.text_input("Admin API Access Token", type="password")
+        
+    if store_url:
+        if not check_subscription(store_url):
+            st.error("❌ Your subscription has expired. Please renew to continue.")
+            st.stop()
+
 
     if store_url and access_token:
 
