@@ -8,3 +8,5 @@ numpy
 twilio
 fastapi
 uvicorn
+streamlit-authenticator
+pyyaml
