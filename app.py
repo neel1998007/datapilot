@@ -274,7 +274,7 @@ if st.button("🚀 Run Scaling Diagnosis", type="primary"):
                 marker_colors=["#FF6B6B", "#FFA500", "#FFD93D", "#6BCB77"]
             )])
             fig.update_layout(height=300, margin=dict(t=30, b=0, l=0, r=0))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     st.markdown("---")
     st.header("🚦 Scaling Decision")
@@ -371,4 +371,5 @@ Status: {scaling_status}
 
     st.markdown("---")
     st.caption("DataPilot v1.0 — Scaling Clarity Engine for Indian D2C Brands")
+
 
