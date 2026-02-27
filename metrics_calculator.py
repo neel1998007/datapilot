@@ -81,7 +81,7 @@ class MetricsCalculator:
 
         if self.date_col:
             self.df[self.date_col] = pd.to_datetime(
-                self.df[self.date_col], errors="coerce", dayfirst=True
+                self.df[self.date_col], errors="coerce"
             )
             self.df["order_date"] = self.df[self.date_col].dt.date
 
@@ -476,4 +476,5 @@ if __name__ == "__main__":
                   f"({p['orders']} orders)")
 
     print(f"\n{'=' * 50}")
+
     print("Report generation complete!")
