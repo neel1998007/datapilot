@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 from dotenv import load_dotenv
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
 from clients import CLIENTS
 from datetime import datetime
 
@@ -23,37 +20,6 @@ def check_subscription(store_url):
             return datetime.now() <= end_date
 
     return False
-
-# Load auth config
-with open("auth_config.yaml") as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-# Create authenticator
-authenticator = stauth.Authenticate(
-    config["credentials"],
-    config["cookie"]["name"],
-    config["cookie"]["key"],
-    config["cookie"]["expiry_days"],
-)
-
-# Login widget
-name, authentication_status, username = authenticator.login(
-    "Login to DataPilot", "main"
-)
-
-# Check authentication
-if authentication_status == False:
-    st.error("❌ Wrong username or password")
-    st.stop()
-
-if authentication_status == None:
-    st.warning("Please enter your username and password")
-    st.stop()
-
-# If we reach here → user is logged in
-# Show logout button in sidebar
-authenticator.logout("Logout", "sidebar")
-st.sidebar.write(f"Welcome, *{name}*")
 
 load_dotenv()
 
@@ -405,3 +371,4 @@ Status: {scaling_status}
 
     st.markdown("---")
     st.caption("DataPilot v1.0 — Scaling Clarity Engine for Indian D2C Brands")
+
